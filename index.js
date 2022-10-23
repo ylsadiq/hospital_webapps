@@ -20,7 +20,7 @@ async function run() {
      // create a Booking to insert
     app.post('/booking', async(req, res) =>{
       const booking = req.body;
-      const query = {treatment: booking.treatment, date: booking.date, patient: booking.patient}
+      const query = {treatment: booking?.treatment, date: booking?.date, patient: booking?.patient};
       const exists = await bookingCollection.findOne(query);
       if(exists){
         return res.send({success: false, booking: exists})
@@ -42,6 +42,23 @@ async function run() {
       const booking = await cursor.toArray();
       res.send(booking);
       });
+
+  app.get('/available', async(req, res) =>{
+    const date = req.query.date || "Oct 22, 2022";
+    const services = await serviceCollection.find().toArray();
+    const query = {date: date};
+    const bookings = await bookingCollection.find(query).toArray();
+    services.forEach(service => {
+      const serviceBookings = bookings.filter(b => b.treatment === service?.name)
+      // const booked = serviceBookings.map(s => s.slot);
+      // service.booked = booked;
+     const bookedSlots = serviceBookings.map(s => s.slot);
+      const available = service.slots.filter(slot => !bookedSlots.includes(slot));
+      service.slots = available
+
+    })
+    res.send(services)
+  })
 
   } finally {
     // await client.close();
