@@ -27,8 +27,16 @@ async function run() {
       }
       const result = await bookingCollection.insertOne(booking);
       return res.send({success: true, result})
-    })   
- 
+    });
+
+    // // GET Booking API
+    // app.get('/booking', async(req, res) =>{
+    //   const patient = req.query.patient;
+    //   console.log(patient);
+    //   const query = {patient: patient};
+    //   const bookings = await bookingCollection.find(query).toArray();
+    //   res.send(bookings)
+    // })
     // GET Packages API
     app.get('/service', async(req, res) =>{
       const cursor = serviceCollection.find({});
@@ -38,10 +46,11 @@ async function run() {
 
     // GET Booking API
     app.get('/booking', async(req, res) =>{
-      const cursor = bookingCollection.find({});
-      const booking = await cursor.toArray();
+      const patient = req.query.patient;
+      const query = {patient: patient}
+      const booking = await bookingCollection.find(query).toArray();
       res.send(booking);
-      });
+      })
 
   app.get('/available', async(req, res) =>{
     const date = req.query.date || "Oct 22, 2022";
