@@ -38,7 +38,6 @@ function verifyJWT(req, res, next) {
       return res.status(403).send({message: "Forbidden access"})
     }
     req.decoded = decoded;
-    console.log(req.decoded = decoded);
     next()
   });
 }
@@ -63,6 +62,34 @@ async function run() {
       const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       res.send({result, token});
     })
+
+    app.get('/users', verifyJWT, async(req, res) =>{
+      const users = await usersCollection.find().toArray();
+      res.send(users)
+    });
+    app.get('/admin/:email', verifyJWT, async(req, res) =>{
+      const email = req.params.email;
+      const user = await usersCollection.findOne({email: email});
+      const isAdmin = user.role === 'admin';
+      res.send({admin: isAdmin})
+    })
+    app.put('/user/admin/:email', verifyJWT, async(req, res) =>{
+      const email = req.params.email;
+      const constractor = req.decoded.email;
+      const constractorEmail = await usersCollection.findOne({email: constractor});
+      if(constractorEmail.role === 'admin'){
+        const filter = {email: email};
+        const updateDoc = {
+          $set: {role: 'admin'},
+        };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+      }else{
+        res.status(403).send({message: 'forbidden'})
+      }
+      
+    })
+
      // create a Booking to insert
     app.post('/booking', async(req, res) =>{
       const booking = req.body;
@@ -96,8 +123,7 @@ async function run() {
       console.log(patient);
       // const author = req.headers.authorization;
       const decodedEmail = req.decoded.email;
-      console.log(decodedEmail);
-      
+
       if(patient === decodedEmail){
         const query = {patient: patient}
         const booking = await bookingCollection.find(query).toArray();
