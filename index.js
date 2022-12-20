@@ -33,7 +33,17 @@ async function run() {
     const serviceCollection = client.db("healling_hospital").collection("services");
     const bookingCollection = client.db("healling_hospital").collection("bookings");
     const usersCollection = client.db("healling_hospital").collection("users");
-
+    const doctorsCollection = client.db("healling_hospital").collection("doctor");
+  
+  const verifyAdmin = async (req, res, next) =>{
+    const constractor = req.decoded.email;
+      const constractorEmail = await usersCollection.findOne({email: constractor});
+      if(constractorEmail.role === 'admin'){
+        next()
+      }else{
+        res.status(403).send({message: 'forbidden'})
+      }
+  }
 
     app.put('/user/:email', async(req, res) =>{
       const email = req.params.email;
@@ -48,31 +58,33 @@ async function run() {
       res.send({result, token});
     })
 
-    app.get('/users', verifyJWT, async(req, res) =>{
+    app.get('/users', async(req, res) =>{
       const users = await usersCollection.find().toArray();
       res.send(users)
     });
+    // Delete User 
+    app.delete('/users/:id', verifyJWT, async(req, res) =>{
+      const id = req.params.id;
+      console.log(id)
+      const query = { _id: ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    })
+
     app.get('/admin/:email', verifyJWT, async(req, res) =>{
       const email = req.params.email;
       const user = await usersCollection.findOne({email: email});
       const isAdmin = user.role === 'admin';
       res.send({admin: isAdmin})
     })
-    app.put('/user/admin/:email', verifyJWT, async(req, res) =>{
+    app.put('/user/admin/:email', verifyJWT, verifyAdmin, async(req, res) =>{
       const email = req.params.email;
-      const constractor = req.decoded.email;
-      const constractorEmail = await usersCollection.findOne({email: constractor});
-      if(constractorEmail.role === 'admin'){
         const filter = {email: email};
         const updateDoc = {
           $set: {role: 'admin'},
         };
       const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-      }else{
-        res.status(403).send({message: 'forbidden'})
-      }
-      
+      res.send(result);      
     })
 
      // create a Booking to insert
@@ -87,17 +99,9 @@ async function run() {
       return res.send({success: true, result})
     });
 
-    // // GET Booking API
-    // app.get('/booking', async(req, res) =>{
-    //   const patient = req.query.patient;
-    //   console.log(patient);
-    //   const query = {patient: patient};
-    //   const bookings = await bookingCollection.find(query).toArray();
-    //   res.send(bookings)
-    // })
     // GET Packages API
     app.get('/service', async(req, res) =>{
-      const cursor = serviceCollection.find({});
+      const cursor = serviceCollection.find({}).project({name: 1, image: 1, service_image: 1});
       const service = await cursor.toArray();
       res.send(service);
       });
@@ -115,8 +119,14 @@ async function run() {
         return res.status(403).send({message: 'Forbidden Access'})
       }
     });
+    // POST Doctors
+    app.post('/doctor', async(req, res) =>{
+      const doctor = req.body;
+      const result = await doctorsCollection.insertOne(doctor);
+      res.send(result)
+    })
 
-    // delete Order
+    // delete Appointment
     app.delete("/booking/:id", async (req, res) => {
     const id = req.params.id;
     const query = { _id: ObjectId(id) };
