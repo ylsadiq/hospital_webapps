@@ -120,11 +120,17 @@ async function run() {
       }
     });
     // POST Doctors
-    app.post('/doctor', async(req, res) =>{
+    app.post('/doctor', verifyJWT, verifyAdmin, async(req, res) =>{
       const doctor = req.body;
       const result = await doctorsCollection.insertOne(doctor);
       res.send(result)
     })
+
+  // GET Doctors
+  app.get('/doctor', verifyJWT, verifyAdmin, async(req, res) =>{
+      const users = await doctorsCollection.find().toArray();
+      res.send(users)
+    });
 
     // delete Appointment
     app.delete("/booking/:id", async (req, res) => {
