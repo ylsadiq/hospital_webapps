@@ -127,11 +127,20 @@ async function run() {
 
   // GET Doctors
   app.get('/doctor', verifyJWT, verifyAdmin, async(req, res) =>{
-      const users = await doctorsCollection.find().toArray();
-      res.send(users)
+      const result = await doctorsCollection.find().toArray();
+      res.send(result)
     });
 
-    // delete Appointment
+  // Delete Doctors
+  app.delete('/doctor/:id', verifyJWT, async(req, res) =>{
+    const id = req.params.id;
+    console.log(id);
+    const query = { _id: ObjectId(id) };
+    const result = await doctorsCollection.deleteOne(query);
+    res.json(result);
+    });
+
+    // Delete Appointment
     app.delete("/booking/:id", async (req, res) => {
     const id = req.params.id;
     const query = { _id: ObjectId(id) };
