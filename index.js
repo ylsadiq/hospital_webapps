@@ -99,7 +99,7 @@ async function run() {
     });
 
     // GET Packages API
-    app.get('/service', async(req, res) =>{
+    app.get('/services', async(req, res) =>{
       const cursor = serviceCollection.find({}).project({name: 1, image: 1, service_image: 1});
       const service = await cursor.toArray();
       res.send(service);
